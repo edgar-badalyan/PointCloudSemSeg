@@ -2,6 +2,7 @@ import numpy as np
 from detectron2.data import transforms as T
 import cv2
 
+
 class PerspectiveTransform(T.Transform):
     """
     Transform to apply homography (perspective transform)
@@ -22,13 +23,11 @@ class PerspectiveTransform(T.Transform):
                                 [xs[1], H-ys[1]],
                                 [W-xs[2], H-ys[2]],
                                 [W-xs[3], ys[3]]])
-                        
         
         self.M_affine = cv2.getPerspectiveTransform(points_original, points_warped)
 
     def apply_image(self, image):
-        
-        
+
         new_image = cv2.warpPerspective(image, self.M_affine, (self.H, self.W))
         
         return new_image
@@ -59,37 +58,3 @@ class PerspectiveAugmentation(T.Augmentation):
         ys = np.random.randint(0, int(self.f*H), size=4)
         
         return PerspectiveTransform(xs, ys, H, W)
-        
-        
-
-class CustomRotationTransform(T.RotationTransform):
-
-    def apply_segmentation(self, segmentation):
-        segmentation = self.apply_image(segmentation, interp=cv2.INTER_NEAREST)
-        return segmentation
-
-
-class CustomRotationAugmentation(T.RandomRotation):
-
-    def get_transform(self, image):
-        h, w = image.shape[:2]
-        center = None
-        if self.is_range:
-            angle = np.random.uniform(self.angle[0], self.angle[1])
-            if self.center is not None:
-                center = (
-                    np.random.uniform(self.center[0][0], self.center[1][0]),
-                    np.random.uniform(self.center[0][1], self.center[1][1]),
-                )
-        else:
-            angle = np.random.choice(self.angle)
-            if self.center is not None:
-                center = np.random.choice(self.center)
-
-        if center is not None:
-            center = (w * center[0], h * center[1])  # Convert to absolute coordinates
-
-        if angle % 360 == 0:
-            return T.NoOpTransform()
-
-        return CustomRotationTransform(h, w, angle, expand=self.expand, center=center, interp=self.interp)
